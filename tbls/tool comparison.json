@@ -1,0 +1,65 @@
+[
+    [
+        "Tool",
+        "Tested with",
+        "Also available in",
+        "Pros",
+        "Cons"
+    ],
+    [
+        "GRASS",
+        "QGIS 3.22 Plugin",
+        "cmd, GRASS GIS",
+        "I was pretty impressed with the r.watersheds tool. It provided an (almost) all in 1 delineation tool. It seems more mature than Pysheds and WhiteBox Tools but by just twisting the max memory knob yielded similar performance to the shiny new libraries.",
+        "As usual with GRASS, I felt like the default data pipeline was just not cutting it, and it requires a bit too much digging into the parameters in order to get a good result. For example switching from Dinf to D8 affected the minimum basin size parameter for some reason. One would need to dive into the theory of watershed delineation and the mechanics of this tool to figure out why the 2 parameters would have a correlated effect."
+    ],
+    [
+        "WhiteBox Tools",
+        "QGIS 3.22 Plugin",
+        "Python, R, WhiteBox GAT, cmd",
+        "Built for speed. Written in modern language Rust\n\nThere are dozens of delineation related tools, and you can dial in exactly which algorithms you prefer to process your LiDAR with. \n\nThe creator recognizes that most people don't know rust, so maintains great Python and R wrappers, as well as a QGIS plugin and his own Whitebox GAT GUI",
+        "Processes everything eagerly. The creator has made it clear he's not interested in larger-than-memory datasets and the rest of us will need to deal with this limitation. There were no issues on Whisky Chitto 10m terrain, but this is a dealbreaker when your dataset exceeds your machine's memory.\n\n1-click delineation tool Isobasins does not deliver anything worthwhile, and I was not able to dial in an acceptable delineation after playing with the parameters and mixing and matching tools. It has all the flexibility but lacks a production-ready instant solution."
+    ],
+    [
+        "SAGA",
+        "QGIS 3.12 Plugin",
+        "cmd",
+        "The Channel Network and Drainage Basins tool is nice in that like TauDEM from HMS, it also gives you Junctions and Reaches and their connectivity. This would be helpful for a delineation meant to be used in HMS as those pieces could simply be imported. \n\nInludes a very wide range of tools.",
+        "Was not able to get a decent delineation from this terrain, even burning in NHD rivers, it just wasn't able to find the connectivity. The subbasins it did produce didn't make sense hydrologically. They only covered isolated patches of the watershed, and there were some subbasins which are completely bounded by a larger subbasin.\n\nIt also seems SAGA is really aging. Running a SAGA tool in QGIS 3.22, a disclaimer pops up saying that SAGA isn't officially supported in this QGIS version, so results may vary. Reverting to QGIS long term release 3.12, every tool loses the projection during the process, and the result needs to be reassigned its projection. Checking the log messages, it's hitting a Pyproj import error, which ultimately drills down to the PROJ C library. It seems SAGA has lived out its saga and support is growing thin for the software moving forward.\n\nAnother big miss is that SAGA seems to behave less like a GIS tool and more like a calculator for vanilla 2D arrays. The burn streams tool wouldn't accept the vector NHD streams, so I rasterized them with SAGA. This new raster caused an unspecified error. What I needed to do was align the raster exactly to the original DEM. A parallel to this would be MapBox's Rasterio. It simply slaps a CRS WKT onto a Numpy 2D array and calls it a raster, then passes through a Numpy broadcasting error whenever any operation is attempted on 2 rasters without identical grids, making it unpractical for many real world GIS applications. Pysheds, for example, provides a more full implementation by abstracting this Rasterio raster into a datacube which aligns any incoming rasters under the hood. Automatically aligning 2 grids should be a basic requirement for any piece of GIS software a user will see.\n\nIncomplete documentation"
+    ],
+    [
+        "PCRaster",
+        "QGIS 3.22 Plugin and Python 3.9",
+        "C++",
+        "Another discretization by Strahler order rather than subbasin area paradigm here. I was pretty impressed with the resulting subbasins. It found the stream and river network perfectly without having to burn in the NHD.\n\nThis one also uses junctions and reaches, however, rather than vectors with the connectivity included, it just gives raster data, so extra post processing would be required to be able to use that in HMS.\n\nOverall I think this one beats out Pysheds as the pure python delineation tool. I was able to get the subbasin delineation process fully automated in Python easier than I was able to get it by hand as a plugin. Any time we may need to iteratively alter a terrain and delineate new subbasins, this would be a nice tool. The process will still need to be optimized to complete in a useful timeframe, however.",
+        "Requires a lot of clicking in QGIS plugin, would not recommend using outside Python. The flow direction tool seems unoptimized and takes much longer than would be expected.\n\nInstallation is not straightforward as a QGIS plugin. Since it's new on the scene, it isn't included yet in the standard QGIS installation like SAGA and GRASS. It must be installed through package manager OSGeo4W or Conda.  The catch is in order to use it within QGIS, the QGIS instance needs to be installed fresh alongside PCRaster through either of the above package managers.\n\nEverything needs to be in this nonstandard PCRaster format. Unfortunately, the Convert to PCRaster Format tool is buggy and one needs to convert GDAL raster to their scalar type, THEN convert the data type to LDD, nominal, boolean, etc. Their strict datatyping is a pain in the butt and seems to offer no speed boost. The way junctions are calculated is kind of a hack, they don't provide that functionality within their lib but then expect the user to input it to the Subcatchments tool."
+    ],
+    [
+        "TauDEM",
+        "HEC-HMS",
+        "ArcGIS, QGIS, cmd",
+        "With the release of HEC-HMS 4.8, TauDEM is now integrated directly in the GUI. The big advantage of using it from HMS, is that it will populate the hydrologic routing elements (reaches and junctions) during the subbasin delineation process. One can now simply start in HMS from a terrain TIF and easily begin building out the model.\n\nBoth the quality and speed of delineations beats the competitors, once the bottlenecks I was hitting were removed.",
+        "There seems to be some bug with it not registering nodata values in the intermediate TIF's it creates, needing manual intervention, as documented in the trial steps."
+    ],
+    [
+        "PCSWMM",
+        "Licensed software we don't have",
+        "PCSWMM",
+        "1 click delineation given target subbasin area. \n\nExtremely fast",
+        "I've tried their delineation tool out a couple of times and never got useful results, it seems to just put random polygons in that roughly match your target size. On the other hand, I generally use SWMM on small urban studies (no rivers), and I'm not sure I've actually tested its delineation on a large watershed. This would be worth looking into if we had access to the software."
+    ],
+    [
+        "ArcHydro",
+        "Licensed software we don't have",
+        "ArcGIS",
+        "Generally gives good results for large watersheds",
+        "You could sit down and watch every Harry Potter movie in the time it takes to delineate one DEM."
+    ],
+    [
+        "Pysheds",
+        null,
+        "Python",
+        "It's a nice modern take on an H&H raster processing library. I'm not sure anywhere else where you can find an implementation of the novel HAND and RFSM analyses. It also claims to have very fast delineation. I once peaked at its internal data structures and the author actually wrote some very slick low-level raster processing algorithms, which in my opinion would be great split out into a separate piece of software.",
+        "I didn't try Pysheds out this time around. There's no multiple subbasin implementation, you can only delineate 1 catchment at a time, so I knew it wouldn't be the winning solution. I once put a lot of effort into getting a delineation working about a year ago and got nowhere. There's a Jupyter notebook example for delineation, but I just couldn't get it working on a different dataset."
+    ]
+]

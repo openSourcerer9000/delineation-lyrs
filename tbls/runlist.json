@@ -1,0 +1,1 @@
+{"GRASS":["GRASS_Watershed","GRASS_Watershed_big","GRASS_Watershed_D8"],"PCRaster":["PC_Strahler8","PC_Python"],"SAGA":["SAGA_Filled_not_burned","SAGA_Fill_and_burn","SAGA_Threshold3"],"TauDEM":["TauDEM_30FT_Res","TauDEM_30FT_nodata_Fixed"],"WhiteBox Tools":["WBT_Delineation10000","WBT_rasterized_NHD_named_streams","WBT_Isobasins"],"PCSWMM":[],"ArcHydro":[],"Pysheds":[]}
